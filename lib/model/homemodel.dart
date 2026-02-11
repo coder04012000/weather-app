@@ -5,51 +5,61 @@ import '../Apiservices/apiservieses.dart';
 
 
 class HomePageProvider with ChangeNotifier {
-  List<Map<String, dynamic>> _data = [];
+  final ApiService _api = ApiService();
+
   bool isLoading = false;
-  String _status = '';
-  String _responsedata = '';
-  var apiObj = ApiServices();
+  String error = '';
+  String cityName = '';
+  double temperature = 0;
+  String description = '';
+  String icon = '';
+  int humidity = 0;
+  double windSpeed = 0;
+  int pressure = 0;
+  List<Map<String, dynamic>> hourlyList = [];
+  List<Map<String, dynamic>> dailyList = [];
 
-  get progress => isLoading;
-  get status => _status;
-  get message => _responsedata;
+  Future<void> loadWeather() async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      final current = await _api.getCurrentWeather();
+      cityName = current['name'];
+      temperature = current['main']['temp'].toDouble();
+      description = current['weather'][0]['description'];
+      icon = current['weather'][0]['icon'];
+      humidity = current['main']['humidity'];
+      windSpeed = current['wind']['speed'].toDouble();
+      pressure = current['main']['pressure'];
+      final forecastData = await _api.getForecast();
+      final List forecastList = forecastData['list'];
+      hourlyList.clear();
+      dailyList.clear();
 
-  List<Map<String, dynamic>> get data => _data;
+      forecastList.take(8).forEach((item) {
+        hourlyList.add({
+          "time": item['dt_txt'],
+          "temp": item['main']['temp'],
+          "icon": item['weather'][0]['icon'],
+        });
+      });
 
-  set data(newData) {
-    _data = newData;
-    notifyListeners();
-  }
+      forecastList.forEach((item) {
+        if (item['dt_txt'].toString().contains("12:00:00")) {
+          dailyList.add({
+            "date": item['dt_txt'],
+            "temp": item['main']['temp'],
+            "icon": item['weather'][0]['icon'],
+          });
+        }
+      });
 
-  Future<void> getdata() async {
-    isLoading = true;
-    notifyListeners(); // Notify listeners that loading is in progress
-
-    final res = await apiObj.Home();
-//print(res);
-    if (res != null) {
-      _responsedata = "Data loaded successfully";
-      var listData = res;
-//print(listData);
-      _data.clear(); // Clear previous data
-      //
-      // listData.forEach((elements) {
-      //   //    print(elements);
-      //   _data.add({
-      //     "id": elements['userId'].toString(),
-      //     "userName": elements['id'].toString(),
-      //     "location": elements['title'].toString(),
-      //
-      //   });
-      // });
+      error = '';
+    } catch (e) {
+      error = e.toString();
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-    else {
-      _responsedata = res['message'];
-      _status = res['status'].toString();
-    }
-
-    isLoading = false;
-    notifyListeners(); // Notify listeners after data has been updated
   }
 }
