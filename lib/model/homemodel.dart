@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:weather_icons/weather_icons.dart';
 
 import '../Apiservices/apiservieses.dart';
 
@@ -62,4 +64,44 @@ class HomePageProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  List<Color> getBackgroundColors() {
+    if (description.toLowerCase().contains("clear")) {
+      return [Colors.orange, Colors.deepOrangeAccent];
+    }
+    else if (description.toLowerCase().contains("cloud")) {
+      return [Colors.blueGrey, Colors.grey];
+    }
+    else if (description.toLowerCase().contains("rain")) {
+      return [Colors.indigo, Colors.blueGrey];
+    }
+    else {
+      return [Colors.blueAccent, Colors.lightBlue];
+    }
+  }
+  IconData getWeatherIconFromCode(String code) {
+    print('line 83');
+    print(code);
+    if (code.startsWith("01")) {
+      return WeatherIcons.day_sunny;
+    } else if (code.startsWith("02")) {
+      return WeatherIcons.day_cloudy;
+    } else if (code.startsWith("03") || code.startsWith("04")) {
+      return WeatherIcons.cloud;
+    } else if (code.startsWith("09") || code.startsWith("10")) {
+      return WeatherIcons.rain;
+    } else if (code.startsWith("11")) {
+      return WeatherIcons.thunderstorm;
+    } else if (code.startsWith("13")) {
+      return WeatherIcons.snow;
+    } else if (code.startsWith("50")) {
+      return WeatherIcons.fog;
+    } else {
+      return WeatherIcons.day_cloudy;
+    }
+  }
+
+
+
+
 }
