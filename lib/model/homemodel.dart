@@ -18,6 +18,7 @@ class HomePageProvider with ChangeNotifier {
   int humidity = 0;
   double windSpeed = 0;
   int pressure = 0;
+
   List<Map<String, dynamic>> hourlyList = [];
   List<Map<String, dynamic>> dailyList = [];
 
