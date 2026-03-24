@@ -62,12 +62,13 @@ class _HomepageState extends State<Homepage> {
                       color: Colors.white),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 Icon(
                   provider.getWeatherIconFromCode(provider.icon),
                   size: 100,
                   color: Colors.white,
                 ),
+                const SizedBox(height: 15),
 
                 Text(
                   "${provider.temperature}°C",
@@ -104,46 +105,49 @@ class _HomepageState extends State<Homepage> {
 
                 const SizedBox(height: 10),
 
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: provider.hourlyList.length,
-                    itemBuilder: (context, index) {
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0,right: 15),
+                  child: SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: provider.hourlyList.length,
+                      itemBuilder: (context, index) {
 
-                      final item = provider.hourlyList[index];
+                        final item = provider.hourlyList[index];
 
-                      final time = DateFormat('HH:mm')
-                          .format(DateTime.parse(item['time']));
+                        final time = DateFormat('HH:mm')
+                            .format(DateTime.parse(item['time']));
 
-                      return Container(
-                        width: 90,
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(time,
-                                style: const TextStyle(color: Colors.white)),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Icon(
-                                provider.getWeatherIconFromCode(item['icon']),
-                                color: Colors.white,
+                        return Container(
+                          width: 90,
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(time,
+                                  style: const TextStyle(color: Colors.white)),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Icon(
+                                  provider.getWeatherIconFromCode(item['icon']),
+                                  color: Colors.white,
+                                ),
+                              )
+                              ,
+                              Text(
+                                "${item['temp']}°C",
+                                style: const TextStyle(color: Colors.white),
                               ),
-                            )
-                            ,
-                            Text(
-                              "${item['temp']}°C",
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
 

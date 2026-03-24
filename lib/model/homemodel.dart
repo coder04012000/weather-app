@@ -27,7 +27,7 @@ class HomePageProvider with ChangeNotifier {
       notifyListeners();
       final current = await _api.getCurrentWeather();
       cityName = current['name'];
-      temperature = current['main']['temp'].toDouble();
+      temperature = current['main']['temp'].round().toDouble();
       description = current['weather'][0]['description'];
       icon = current['weather'][0]['icon'];
       humidity = current['main']['humidity'];
