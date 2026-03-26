@@ -12,6 +12,8 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
+  TextEditingController controller = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -195,6 +197,31 @@ class _HomepageState extends State<Homepage> {
               ],
             ),
           ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => SearchPage(provider)),
+          );
+        },
+        child: const Icon(Icons.add_circle_rounded),
+      ),
+    );
+  }
+
+  SearchPage(provider){
+    TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: "Enter city",
+        suffixIcon: IconButton(
+          icon: Icon(Icons.search),
+          onPressed: () {
+            provider.fetchWeatherByCity(controller.text);
+            Navigator.pop(context);
+          },
         ),
       ),
     );

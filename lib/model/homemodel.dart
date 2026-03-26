@@ -18,44 +18,74 @@ class HomePageProvider with ChangeNotifier {
   int humidity = 0;
   double windSpeed = 0;
   int pressure = 0;
-
+  int currentIndex = 0;
+  List<Map<String, dynamic>> allCities = [];
   List<Map<String, dynamic>> hourlyList = [];
   List<Map<String, dynamic>> dailyList = [];
+
+  // Future<void> loadWeather() async {
+  //   try {
+  //     isLoading = true;
+  //     notifyListeners();
+  //     final current = await _api.getCurrentWeather();
+  //     cityName = current['name'];
+  //     temperature = current['main']['temp'].round().toDouble();
+  //     description = current['weather'][0]['description'];
+  //     icon = current['weather'][0]['icon'];
+  //     humidity = current['main']['humidity'];
+  //     windSpeed = current['wind']['speed'].toDouble();
+  //     pressure = current['main']['pressure'];
+  //     final forecastData = await _api.getForecast();
+  //     final List forecastList = forecastData['list'];
+  //     hourlyList.clear();
+  //     dailyList.clear();
+  //
+  //     forecastList.take(8).forEach((item) {
+  //       hourlyList.add({
+  //         "time": item['dt_txt'],
+  //         "temp": item['main']['temp'],
+  //         "icon": item['weather'][0]['icon'],
+  //       });
+  //     });
+  //
+  //     forecastList.forEach((item) {
+  //       if (item['dt_txt'].toString().contains("12:00:00")) {
+  //         dailyList.add({
+  //           "date": item['dt_txt'],
+  //           "temp": item['main']['temp'],
+  //           "icon": item['weather'][0]['icon'],
+  //         });
+  //       }
+  //     });
+  //
+  //     error = '';
+  //   } catch (e) {
+  //     error = e.toString();
+  //   } finally {
+  //     isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
 
   Future<void> loadWeather() async {
     try {
       isLoading = true;
       notifyListeners();
+
       final current = await _api.getCurrentWeather();
-      cityName = current['name'];
-      temperature = current['main']['temp'].round().toDouble();
-      description = current['weather'][0]['description'];
-      icon = current['weather'][0]['icon'];
-      humidity = current['main']['humidity'];
-      windSpeed = current['wind']['speed'].toDouble();
-      pressure = current['main']['pressure'];
-      final forecastData = await _api.getForecast();
-      final List forecastList = forecastData['list'];
-      hourlyList.clear();
-      dailyList.clear();
 
-      forecastList.take(8).forEach((item) {
-        hourlyList.add({
-          "time": item['dt_txt'],
-          "temp": item['main']['temp'],
-          "icon": item['weather'][0]['icon'],
-        });
-      });
+      final currentCity = {
+        "city": current['name'],
+        "temp": current['main']['temp'].round(),
+        "desc": current['weather'][0]['description'],
+        "icon": current['weather'][0]['icon'],
+      };
 
-      forecastList.forEach((item) {
-        if (item['dt_txt'].toString().contains("12:00:00")) {
-          dailyList.add({
-            "date": item['dt_txt'],
-            "temp": item['main']['temp'],
-            "icon": item['weather'][0]['icon'],
-          });
-        }
-      });
+      if (allCities.isEmpty) {
+        allCities.add(currentCity); // FIRST PAGE
+      } else {
+        allCities[0] = currentCity; // UPDATE
+      }
 
       error = '';
     } catch (e) {
@@ -65,7 +95,25 @@ class HomePageProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  Future<void> fetchWeatherByCity(String city) async {
+    try {
+      final data = await _api.getWeatherByCity(city);
 
+      final newCity = {
+        "city": data['name'],
+        "temp": (data['main']['temp'] as num).round(),
+        "desc": data['weather'][0]['description'],
+        "icon": data['weather'][0]['icon'],
+      };
+
+      if (!allCities.any((e) => e['city'] == newCity['city'])) {
+        allCities.add(newCity);
+        notifyListeners();
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
   List<Color> getBackgroundColors() {
     if (description.toLowerCase().contains("clear")) {
       return [Colors.orange, Colors.deepOrangeAccent];
