@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
+import 'package:weaterapp/provider/homeprovider.dart';
 import 'model/homemodel.dart';
 import 'view/home.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+
+  await Hive.openBox('weatherBox');
   runApp(
     ChangeNotifierProvider(
       create: (context) => HomePageProvider(),

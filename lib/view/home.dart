@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../model/homemodel.dart';
+import 'package:weaterapp/view/searchscreen.dart';
 import 'package:intl/intl.dart';
+
+import '../provider/homeprovider.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -12,19 +14,19 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-  TextEditingController controller = TextEditingController();
-
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        Provider.of<HomePageProvider>(context, listen: false)
-            .loadWeather());
+
+    Future.microtask(() async {
+      final provider = Provider.of<HomePageProvider>(context, listen: false);
+      await provider.loadCurrentWeather();
+      await provider.loadSavedCities();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-
     final provider = Provider.of<HomePageProvider>(context);
 
     if (provider.isLoading) {
@@ -39,84 +41,118 @@ class _HomepageState extends State<Homepage> {
       );
     }
 
-    return Scaffold(
-     // backgroundColor: provider.getBackgroundColors(),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: provider.getBackgroundColors(),
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
+    if (provider.cities.isEmpty) {
+      return const Scaffold(
+        body: Center(child: Text("No Data")),
+      );
+    }
 
-                const SizedBox(height: 20),
-                Text(
-                  provider.cityName,
-                  style: const TextStyle(
-                    fontStyle: FontStyle.italic,
+    return Scaffold(
+      body: PageView.builder(
+        itemCount: provider.cities.length,
+        onPageChanged: (index) {
+          provider.currentIndex = index;
+          provider.notifyListeners();
+        },
+        itemBuilder: (context, index) {
+          final city = provider.cities[index];
+
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: provider.getBackgroundColors(city.desc),
+              ),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(provider.cities.length, (index) {
+                      return Container(
+                        margin: EdgeInsets.all(4),
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: provider.currentIndex == index
+                              ? Colors.white
+                              : Colors.white24,
+
+                        ),
+                      );
+                    }),
+                  ),
+
+                  Text(
+                    city.city,
+                    style: const TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
+                      color: Colors.white,
+                    ),
+                  ),
 
-                const SizedBox(height: 15),
-                Icon(
-                  provider.getWeatherIconFromCode(provider.icon),
-                  size: 100,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 15),
+                  const SizedBox(height: 15),
 
-                Text(
-                  "${provider.temperature}°C",
-                  style: const TextStyle(
+                  Icon(
+                    provider.getWeatherIconFromCode(city.icon),
+                    size: 100,
+                    color: Colors.white,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    "${city.temp}°C",
+                    style: const TextStyle(
                       fontSize: 60,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
-                Text(
-                  provider.description.toUpperCase(),
-                  style: const TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+
+                  Text(
+                    city.desc.toUpperCase(),
+                    style: const TextStyle(
                       fontSize: 18,
-                      color: Colors.white70),
-                ),
+                      color: Colors.white70,
+                    ),
+                  ),
 
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _detailTile("Humidity", "${provider.humidity}%"),
-                    _detailTile("Wind", "${provider.windSpeed} m/s"),
-                    _detailTile("Pressure", "${provider.pressure} hPa"),
-                  ],
-                ),
+                  const SizedBox(height: 20),
 
-                const SizedBox(height: 30),
-                const Text(
-                  "Hourly Forecast",
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _detailTile("Humidity", "${city.humidity}%"),
+                      _detailTile("Wind", "${city.wind} m/s"),
+                      _detailTile("Pressure", "${city.pressure} hPa"),
+                    ],
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 30),
 
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0,right: 15),
-                  child: SizedBox(
+                  const Text(
+                    "Hourly Forecast",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  SizedBox(
                     height: 120,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: provider.hourlyList.length,
-                      itemBuilder: (context, index) {
-
-                        final item = provider.hourlyList[index];
+                      itemCount: city.hourly.length,
+                      itemBuilder: (context, i) {
+                        final item = city.hourly[i];
 
                         final time = DateFormat('HH:mm')
                             .format(DateTime.parse(item['time']));
@@ -133,14 +169,12 @@ class _HomepageState extends State<Homepage> {
                             children: [
                               Text(time,
                                   style: const TextStyle(color: Colors.white)),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Icon(
-                                  provider.getWeatherIconFromCode(item['icon']),
-                                  color: Colors.white,
-                                ),
-                              )
-                              ,
+                              const SizedBox(height: 5),
+                              Icon(
+                                provider.getWeatherIconFromCode(item['icon']),
+                                color: Colors.white,
+                              ),
+                              const SizedBox(height: 5),
                               Text(
                                 "${item['temp']}°C",
                                 style: const TextStyle(color: Colors.white),
@@ -151,78 +185,63 @@ class _HomepageState extends State<Homepage> {
                       },
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
-                const Text(
-                  "5 Day Forecast",
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
+                  const SizedBox(height: 20),
 
-                const SizedBox(height: 10),
+                  const Text(
+                    "5 Day Forecast",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
 
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: provider.dailyList.length,
-                  itemBuilder: (context, index) {
+                  const SizedBox(height: 10),
 
-                    final item = provider.dailyList[index];
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: city.daily.length,
+                    itemBuilder: (context, i) {
+                      final item = city.daily[i];
 
-                    final day = DateFormat('EEE')
-                        .format(DateTime.parse(item['date']));
+                      final day = DateFormat('EEE')
+                          .format(DateTime.parse(item['date']));
 
-                    return ListTile(
-                      leading: Text(
-                        day,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                      title: Text(
-                        "${item['temp']}°C",
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                      trailing: Icon(
-                        provider.getWeatherIconFromCode(item['icon']),
-                        color: Colors.white,
-                      )
+                      return ListTile(
+                        leading: Text(
+                          day,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        title: Text(
+                          "${item['temp']}°C",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        trailing: Icon(
+                          provider.getWeatherIconFromCode(item['icon']),
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
 
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
+
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => SearchPage(provider)),
+            MaterialPageRoute(builder: (_) => SearchPage()),
           );
         },
-        child: const Icon(Icons.add_circle_rounded),
-      ),
-    );
-  }
-
-  SearchPage(provider){
-    TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: "Enter city",
-        suffixIcon: IconButton(
-          icon: Icon(Icons.search),
-          onPressed: () {
-            provider.fetchWeatherByCity(controller.text);
-            Navigator.pop(context);
-          },
-        ),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -237,14 +256,10 @@ class _HomepageState extends State<Homepage> {
         const SizedBox(height: 5),
         Text(
           value,
-          style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ],
     );
   }
 }
-
-
-
